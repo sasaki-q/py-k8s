@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      containers:
+        - name: app-container
+          image: app-image
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+          env:
+            - name: DB_HOST
+              value: sample-db-service
+            - name: DB_NAME
+              value: sample-db
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASS
+              value: postgres
+          envFrom:
+            - configMapRef:
+                name: pg-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  selector:
+    app: app
+  ports:
+  - protocol: "TCP"
+    port: 8080
+    targetPort: 8080
+  type: LoadBalancer
