@@ -12,8 +12,15 @@ spec:
       labels:
         app: app
     spec:
+      initContainers:
+        - name: wait-dynamo-db--app
+          image: busybox:1.28
+          command: ["sh", "-c", "until nc -z dynamodb-service 8000; do echo waiting for dynamo-service; sleep 2; done"]
+        - name: wait-postgres-db--app
+          image: busybox:1.28
+          command: ["sh", "-c", "until nc -z postgres-service 5433; do echo waiting for postgres-service; sleep 2; done"]
       containers:
-        - name: app-container
+        - name: app
           image: app-image
           resources:
             limits:
@@ -21,16 +28,13 @@ spec:
               cpu: "1"
           env:
             - name: DB_HOST
-              value: sample-db-service
+              value: postgres-service
             - name: DB_NAME
               value: sample-db
             - name: DB_USER
               value: postgres
             - name: DB_PASS
               value: postgres
-          envFrom:
-            - configMapRef:
-                name: pg-conf
 ---
 apiVersion: v1
 kind: Service
@@ -40,7 +44,7 @@ spec:
   selector:
     app: app
   ports:
-  - protocol: "TCP"
+  - protocol: TCP
     port: 8080
     targetPort: 8080
   type: LoadBalancer

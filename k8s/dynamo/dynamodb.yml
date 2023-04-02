@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: dynamodb
 spec:
@@ -15,10 +15,25 @@ spec:
       containers:
       - name: dynamodb-container
         image: amazon/dynamodb-local
+        command:
+            - "java"
+        args:
+          - "-jar"
+          - "DynamoDBLocal.jar"
+          - "-sharedDb"
+          - "-dbPath"
+          - "/home/dynamodblocal/data"
+        volumeMounts:
+          - mountPath: /home/dynamodblocal/data
+            name: dynamo-pv-storage
+  volumeClaimTemplates:
+    - metadata:
+        name: dynamo-pv-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
         resources:
-          limits:
-            memory: 512Mi
-            cpu: "1"
+          requests:
+            storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
@@ -28,6 +43,6 @@ spec:
   selector:
     app: dynamodb
   ports:
-  - protocol: "TCP"
+  - protocol: TCP
     port: 8000
     targetPort: 8000

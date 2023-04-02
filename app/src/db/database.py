@@ -10,15 +10,18 @@ db_config = {
     "pass": os.getenv("DB_PASS", ""),
 }
 
-dns = f'postgresql://{db_config["user"]}:{db_config["pass"]}@{db_config["host"]}:5433/{db_config["name"]}'
-Base = declarative_base()
-engine = create_engine(dns, echo=True)
 
-Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+class RDSClientBase():
+    Base = declarative_base()
+    engine = create_engine(
+        f'postgresql://{db_config["user"]}:{db_config["pass"]}@{db_config["host"]}:5433/{db_config["name"]}',
+        echo=True
+    )
+    Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
-def get_db():
-    db = Session()
-    try:
-        yield db
-    finally:
-        db.close()
+    def get_db(self):
+        db = self.Session()
+        try:
+            yield db
+        finally:
+            db.close()
